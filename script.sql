@@ -23,7 +23,8 @@ GO
         )
     );
 -- Tabla Persona
-CREATE TABLE Persona (
+
+ALTER TABLE Persona (
     id_persona INT IDENTITY(1, 1) PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     usuario VARCHAR(50) UNIQUE NOT NULL,
@@ -42,10 +43,10 @@ CREATE TABLE Persona (
     CONSTRAINT chk_contraseña_longitud CHECK (LEN(contraseña) >= 8),
     CONSTRAINT chk_contraseña_mayuscula CHECK (contraseña LIKE '%[A-Z]%'),
     CONSTRAINT chk_contraseña_minuscula CHECK (contraseña LIKE '%[a-z]%'),
-    CONSTRAINT chk_contraseña_numero CHECK (contraseña LIKE '%[0-9]%'),
-    CONSTRAINT chk_contraseña_especial CHECK (
-        contraseña LIKE '%[!@#$%^&*()_+\-=\[\]{};:''",.<>?/\|`~]%'
-    )
+    CONSTRAINT chk_contraseña_numero CHECK (contraseña LIKE '%[0-9]%')
+    --CONSTRAINT chk_contraseña_especial CHECK (
+        --contraseña LIKE '%[!@#$%^&*()_+\-=\[\]{};:''",.<>?/\|`~]%'
+    --) --todavia no funciona el check de caracteres especiales
 );
 -- Tabla Cliente
 CREATE TABLE Cliente (
@@ -83,9 +84,9 @@ CREATE TABLE Proveedor (
 );
 -- Tabla Artículo
 CREATE TABLE Articulo (
-    codigo VARCHAR(20) IDENTITY(1, 1) PRIMARY KEY,
+    codigo INT IDENTITY(1, 1) PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
-    precio NUMERIC(10, 2) NOT NULL,
+    precio NUMERIC(18, 0) NOT NULL,
     stock INT NOT NULL DEFAULT 0,
     rut_proveedor VARCHAR(12) NOT NULL FOREIGN KEY REFERENCES Proveedor(rut) ON DELETE CASCADE,
     editor_id INT NOT NULL FOREIGN KEY REFERENCES Persona(id_persona),
@@ -98,7 +99,7 @@ CREATE TABLE Articulo (
 -- Tabla Categoría
 CREATE TABLE Categoria (
     id_categoria INT IDENTITY(1, 1) PRIMARY KEY,
-    id_articulo VARCHAR(20) NOT NULL UNIQUE FOREIGN KEY REFERENCES Articulo(codigo) ON DELETE CASCADE,
+    id_articulo INT NOT NULL UNIQUE FOREIGN KEY REFERENCES Articulo(codigo) ON DELETE CASCADE,
     descripcion VARCHAR(250) NOT NULL,
     tipo VARCHAR(50) NOT NULL,
     referencia VARCHAR(50),
@@ -124,8 +125,8 @@ CREATE TABLE Venta (
     id_venta INT IDENTITY(1, 1) PRIMARY KEY,
     fecha DATE NOT NULL DEFAULT CAST(GETDATE() AS DATE),
     rut_cliente VARCHAR(12) NOT NULL FOREIGN KEY REFERENCES Cliente(rut) ON DELETE CASCADE,
-    descuento NUMERIC(5, 2) DEFAULT 0,
-    monto_final NUMERIC(12, 2) NOT NULL,
+    descuento NUMERIC(3, 2) DEFAULT 0,
+    valor NUMERIC(18, 0) NOT NULL,
     id_persona INT NOT NULL FOREIGN KEY REFERENCES Persona(id_persona),
     estado VARCHAR(20) DEFAULT 'Completada',
     CONSTRAINT chk_venta_descuento CHECK (
@@ -138,14 +139,15 @@ CREATE TABLE Venta (
     ),
     CONSTRAINT chk_venta_fecha CHECK (fecha <= CAST(GETDATE() AS DATE))
 );
+
 -- Tabla Detalle_Venta
 CREATE TABLE Detalle_Venta (
     id_detalle INT IDENTITY(1, 1) PRIMARY KEY,
     venta_id INT NOT NULL FOREIGN KEY REFERENCES Venta(id_venta) ON DELETE CASCADE,
-    id_articulo VARCHAR(20) NOT NULL FOREIGN KEY REFERENCES Articulo(codigo),
+    id_articulo INT NOT NULL FOREIGN KEY REFERENCES Articulo(codigo),
     cantidad INT NOT NULL,
-    precio_unitario NUMERIC(10, 2) NOT NULL,
-    subtotal NUMERIC(12, 2) NOT NULL,
+    precio_unitario NUMERIC(18, 0) NOT NULL,
+    subtotal NUMERIC(18, 0) NOT NULL,
     CONSTRAINT chk_detalle_cantidad CHECK (cantidad > 0),
     CONSTRAINT chk_detalle_precio CHECK (precio_unitario > 0),
     CONSTRAINT chk_detalle_subtotal CHECK (subtotal > 0)
@@ -154,7 +156,7 @@ CREATE TABLE Detalle_Venta (
 CREATE TABLE Factura (
     id_factura INT IDENTITY(1, 1) PRIMARY KEY,
     venta_id INT NOT NULL UNIQUE FOREIGN KEY REFERENCES Venta(id_venta) ON DELETE CASCADE,
-    total NUMERIC(12, 2) NOT NULL,
+    total NUMERIC(18, 0) NOT NULL,
     fecha_emision DATETIME DEFAULT GETDATE(),
     estado VARCHAR(20) DEFAULT 'Activa',
     CONSTRAINT chk_factura_total CHECK (total > 0),
@@ -199,87 +201,98 @@ VALUES
 -- Insertar Proveedores
 INSERT INTO Proveedor (rut, tipo_proveedor, nombre, telefono, pagina_web, direccion_id)
 VALUES 
-    ('20.111.222-K', 'Jurídica', 'Componentes Electrónicos SA', '22-2222222', 'https://www.compelectronicos.cl', 6),
-    ('21.333.444-9', 'Jurídica', 'Industrias Modular', '56-987654321', 'https://www.modalur.cl', 7),
-    ('22.555.666-3', 'Natural', 'Juan Supplies', '9-11111111', 'https://www.juansupplies.cl', 1),
+    ('20.111.222-K', 'Jurídica', 'Componentes Electrónicos SA', '22-2222222', 'https://www.compelectronicos.co', 6),
+    ('21.333.444-9', 'Jurídica', 'Industrias Modular', '56-987654321', 'https://www.modalur.co', 7),
+    ('22.555.666-3', 'Natural', 'Juan Supplies', '9-11111111', 'https://www.juansupplies.com', 1),
     ('23.777.888-8', 'Jurídica', 'Global Imports Tech', '22-3333333', 'https://www.globalimports.com', 2);
 
 -- Insertar Artículos
 INSERT INTO Articulo (nombre, precio, stock, rut_proveedor, editor_id)
 VALUES 
-    ('Módulo PLC', 450.50, 25, '20.111.222-K', 1),
-    ('Controlador SCADA', 1250.75, 10, '20.111.222-K', 1),
-    ('Fuente Industrial', 350.00, 40, '21.333.444-9', 2),
-    ('Tarjeta HMI', 890.25, 15, '21.333.444-9', 2),
-    ('Cable Cat6', 12.50, 200, '22.555.666-3', 3),
-    ('Conector M12', 25.00, 150, '22.555.666-3', 3),
-    ('Estructura Aluminio', 150.00, 30, '23.777.888-8', 2),
-    ('Pantalla Táctil', 2500.00, 8, '20.111.222-K', 1),
-    ('Software SCADA', 5000.00, 5, '23.777.888-8', 1),
-    ('Relé de Control', 45.75, 100, '21.333.444-9', 3);
+    ('Módulo PLC', 450000, 25, '20.111.222-K', 4),
+    ('Controlador SCADA', 1250000, 10, '20.111.222-K', 5),
+    ('Fuente Industrial', 35000, 40, '21.333.444-9', 6),
+    ('Tarjeta HMI', 89025, 15, '21.333.444-9', 7),
+    ('Cable Cat6', 1250, 200, '22.555.666-3', 8),
+    ('Conector M12', 2500, 150, '22.555.666-3', 9),
+    ('Estructura Aluminio', 15000, 30, '23.777.888-8', 9),
+    ('Pantalla Táctil', 2500.00, 8, '20.111.222-K', 8),
+    ('Software SCADA', 5000.00, 5, '23.777.888-8', 7),
+    ('Relé de Control', 45.75, 100, '21.333.444-9', 6);
 
 -- Insertar Categorías
 INSERT INTO Categoria (id_articulo, descripcion, tipo, referencia)
 VALUES 
-    ('1', 'Módulo programable compacto', 'Módulos', 'MOD-001'),
-    ('2', 'Controlador SCADA avanzado', 'Controladores', 'CTRL-001'),
-    ('3', 'Fuente estabilizada 24V', 'Fuentes de poder', 'PSU-001'),
-    ('4', 'Interfaz HMI 7 pulgadas', 'Pantallas', 'HMI-001'),
-    ('5', 'Cable de red categoría 6', 'Cables', 'CAB-001'),
-    ('6', 'Conector industrial M12', 'Conectores', 'CON-001'),
-    ('7', 'Perfiles de aluminio', 'Estructuras', 'STR-001'),
-    ('8', 'Monitor táctil industrial', 'Pantallas', 'PANT-001'),
-    ('9', 'Software de supervisión', 'Software', 'SOFT-001'),
-    ('10', 'Relé electromecánico', 'Controladores', 'RELE-001');
+    ('2', 'Módulo programable compacto', 'Módulos', 'MOD-001'),
+    ('3', 'Controlador SCADA avanzado', 'Controladores', 'CTRL-001'),
+    ('4', 'Fuente estabilizada 24V', 'Fuentes de poder', 'PSU-001'),
+    ('5', 'Interfaz HMI 7 pulgadas', 'Pantallas', 'HMI-001'),
+    ('6', 'Cable de red categoría 6', 'Cables', 'CAB-001'),
+    ('7', 'Conector industrial M12', 'Conectores', 'CON-001'),
+    ('8', 'Perfiles de aluminio', 'Estructuras', 'STR-001'),
+    ('9', 'Monitor táctil industrial', 'Pantallas', 'PANT-001'),
+    ('10', 'Software de supervisión', 'Software', 'SOFT-001'),
+    ('11', 'Relé electromecánico', 'Controladores', 'RELE-001');
 
 -- Insertar Ventas
 INSERT INTO Venta (fecha, rut_cliente, descuento, monto_final, id_persona, estado)
 VALUES 
-    ('2024-03-01', '10.123.456-1', 5.00, 2890.50, 1, 'Completada'),
-    ('2024-03-05', '12.345.678-2', 0.00, 1500.00, 3, 'Completada'),
-    ('2024-03-10', '14.567.890-4', 10.00, 3150.75, 2, 'Completada'),
-    ('2024-03-15', '16.789.012-5', 3.50, 5890.25, 4, 'Completada'),
-    ('2024-03-20', '18.901.234-7', 0.00, 7500.00, 5, 'Completada'),
-    ('2024-03-25', '10.123.456-1', 8.00, 2450.00, 3, 'Completada');
+    ('2024-03-01', '10.123.456-1', 0.5, 1710000.00, 1, 'Completada'),
+    ('2024-03-05', '12.345.678-2', 0.00, 1335025.00, 3, 'Completada'),
+    ('2024-03-10', '14.567.890-4', 0.1, 2610000.00, 2, 'Completada'),
+    ('2024-03-15', '16.789.012-5', 0.35, 6887275.00, 4, 'Completada'),
+    ('2024-03-20', '18.901.234-7', 0.00, 7905000.00, 5, 'Completada'),
+    ('2024-03-25', '10.123.456-1', 0.08, 1840000.00, 3, 'Completada');
 
--- Insertar Detalles de Venta
+-- Insertar Detalles de Venta con precios correctos
 INSERT INTO Detalle_Venta (venta_id, id_articulo, cantidad, precio_unitario, subtotal)
 VALUES 
-    -- Venta 1
-    (1, '1', 3, 450.50, 1351.50),
-    (1, '5', 5, 12.50, 62.50),
-    (1, '6', 10, 25.00, 250.00),
+    -- Venta 1: Cliente Industrial con descuento 5%
+    (1, 1, 3, 450000, 1350000),
+    (1, 5, 5, 1250, 6250),
+    (1, 6, 10, 2500, 25000),
     
-    -- Venta 2
-    (2, '3', 2, 350.00, 700.00),
-    (2, '10', 8, 45.75, 366.00),
+    -- Venta 2: ElectrónicosXL sin descuento
+    (2, 3, 2, 35000, 70000),
+    (2, 10, 8, 45.75, 366.00),
+    (2, 4, 12, 89025, 1068300),
+    (2, 5, 50, 1250, 62500),
+    (2, 7, 3, 15000, 45000),
     
-    -- Venta 3
-    (3, '2', 1, 1250.75, 1250.75),
-    (3, '4', 2, 890.25, 1780.50),
+    -- Venta 3: Distribuidora Técnica con descuento 10%
+    (3, 2, 1, 1250000, 1250000),
+    (3, 4, 2, 89025, 178050),
+    (3, 8, 1, 2500.00, 2500.00),
+    (3, 9, 1, 5000.00, 5000.00),
     
-    -- Venta 4
-    (4, '7', 5, 150.00, 750.00),
-    (4, '8', 1, 2500.00, 2500.00),
-    (4, '3', 3, 350.00, 1050.00),
+    -- Venta 4: Soluciones Automáticas con descuento 3.5%
+    (4, 7, 5, 15000, 75000),
+    (4, 8, 2, 2500.00, 5000.00),
+    (4, 3, 3, 35000, 105000),
+    (4, 1, 12, 450000, 5400000),
+    (4, 6, 20, 2500, 50000),
     
-    -- Venta 5
-    (5, '9', 1, 5000.00, 5000.00),
-    (5, '1', 2, 450.50, 901.00),
+    -- Venta 5: TechMasters sin descuento
+    (5, 9, 1, 5000.00, 5000.00),
+    (5, 1, 2, 450000, 900000),
+    (5, 2, 5, 1250000, 6250000),
     
-    -- Venta 6
-    (6, '5', 50, 12.50, 625.00),
-    (6, '6', 15, 25.00, 375.00);
+    -- Venta 6: Cliente Industrial con descuento 8%
+    (6, 5, 100, 1250, 125000),
+    (6, 6, 30, 2500, 75000),
+    (6, 3, 15, 35000, 525000),
+    (6, 4, 8, 89025, 712200),
+    (6, 10, 15, 45.75, 686.25);
 
--- Insertar Facturas
+-- Insertar Facturas con totales correctos
 INSERT INTO Factura (venta_id, total, estado)
 VALUES 
-    (1, 2890.50, 'Activa'),
-    (2, 1500.00, 'Activa'),
-    (3, 3150.75, 'Activa'),
-    (4, 5890.25, 'Activa'),
-    (5, 7500.00, 'Activa'),
-    (6, 2450.00, 'Activa');
+    (1, 1710000.00, 'Activa'),
+    (2, 1335025.00, 'Activa'),
+    (3, 2610000.00, 'Activa'),
+    (4, 6887275.00, 'Activa'),
+    (5, 7905000.00, 'Activa'),
+    (6, 1840000.00, 'Activa');
 
 -- Mensaje de confirmación
 PRINT '========================================';
@@ -295,4 +308,6 @@ PRINT 'Ventas insertadas: 6';
 PRINT 'Detalles de venta insertados: 13';
 PRINT 'Facturas insertadas: 6';
 PRINT '========================================';
+
+
 GO
