@@ -201,7 +201,7 @@ VALUES
 -- Insertar Proveedores
 INSERT INTO Proveedor (rut, tipo_proveedor, nombre, telefono, pagina_web, direccion_id)
 VALUES 
-    ('20.111.222-K', 'Jurídica', 'Componentes Electrónicos SA', '22-2222222', 'https://www.compelectronicos.co', 6),
+    ('20.111.222-K', 'Natural', 'Componentes Electrónicos SA', '22-2222222', 'https://www.compelectronicos.co', 6),
     ('21.333.444-9', 'Jurídica', 'Industrias Modular', '56-987654321', 'https://www.modalur.co', 7),
     ('22.555.666-3', 'Natural', 'Juan Supplies', '9-11111111', 'https://www.juansupplies.com', 1),
     ('23.777.888-8', 'Jurídica', 'Global Imports Tech', '22-3333333', 'https://www.globalimports.com', 2);
