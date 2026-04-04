@@ -1,9 +1,9 @@
 -- Crear base de datos SQL Server
 IF OBJECT_ID('STOCKMASTERBD') is not null
- drop database STOCKMASTERBD
-create database STOCKMASTERBD;-- Tabla Dirección
+ drop database STOCKMASTER_BD
+create database STOCKMASTER_BD;-- Tabla Dirección
 GO
-use STOCKMASTERBD
+use STOCKMASTER_BD
 GO
     CREATE TABLE Direccion (
         direccion_id INT IDENTITY(1, 1) PRIMARY KEY,
@@ -24,7 +24,7 @@ GO
     );
 -- Tabla Persona
 
-ALTER TABLE Persona (
+CREATE TABLE Persona (
     id_persona INT IDENTITY(1, 1) PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     usuario VARCHAR(50) UNIQUE NOT NULL,
@@ -133,7 +133,7 @@ CREATE TABLE Venta (
         descuento >= 0
         AND descuento <= 1
     ),
-    CONSTRAINT chk_venta_monto CHECK (monto_final > 0),
+    CONSTRAINT chk_venta_monto CHECK (valor > 0),
     CONSTRAINT chk_venta_estado CHECK (
         estado IN ('Pendiente', 'Completada', 'Cancelada')
     ),
@@ -157,10 +157,8 @@ CREATE TABLE Factura (
     id_factura INT IDENTITY(1, 1) PRIMARY KEY,
     venta_id INT NOT NULL UNIQUE FOREIGN KEY REFERENCES Venta(id_venta) ON DELETE CASCADE,
     total NUMERIC(18, 0) NOT NULL,
-    fecha_emision DATETIME DEFAULT GETDATE(),
-    estado VARCHAR(20) DEFAULT 'Activa',
-    CONSTRAINT chk_factura_total CHECK (total > 0),
-    CONSTRAINT chk_factura_estado CHECK (estado IN ('Activa', 'Cancelada', 'Anulada'))
+    fecha_emision DATETIME DEFAULT GETDATE()
+    CONSTRAINT chk_factura_total CHECK (total > 0)
 );
 
 
@@ -209,33 +207,35 @@ VALUES
 -- Insertar Artículos
 INSERT INTO Articulo (nombre, precio, stock, rut_proveedor, editor_id)
 VALUES 
-    ('Módulo PLC', 450000, 25, '20.111.222-K', 4),
-    ('Controlador SCADA', 1250000, 10, '20.111.222-K', 5),
-    ('Fuente Industrial', 35000, 40, '21.333.444-9', 6),
-    ('Tarjeta HMI', 89025, 15, '21.333.444-9', 7),
-    ('Cable Cat6', 1250, 200, '22.555.666-3', 8),
-    ('Conector M12', 2500, 150, '22.555.666-3', 9),
-    ('Estructura Aluminio', 15000, 30, '23.777.888-8', 9),
-    ('Pantalla Táctil', 2500.00, 8, '20.111.222-K', 8),
-    ('Software SCADA', 5000.00, 5, '23.777.888-8', 7),
-    ('Relé de Control', 45.75, 100, '21.333.444-9', 6);
+    ('Módulo PLC', 450000, 25, '20.111.222-K', 1),
+    ('Controlador SCADA', 1250000, 10, '20.111.222-K', 2),
+    ('Fuente Industrial', 35000, 40, '21.333.444-9', 3),
+    ('Tarjeta HMI', 89025, 15, '21.333.444-9', 4),
+    ('Cable Cat6', 1250, 200, '22.555.666-3', 5),
+    ('Conector M12', 2500, 150, '22.555.666-3', 5),
+    ('Estructura Aluminio', 15000, 30, '23.777.888-8', 6),
+    ('Pantalla Táctil', 2500.00, 8, '20.111.222-K', 6),
+    ('Software SCADA', 5000.00, 5, '23.777.888-8', 5),
+    ('Relé de Control', 45.75, 100, '21.333.444-9', 4);
 
+-- revisar que coincidad el id del articulo
 -- Insertar Categorías
 INSERT INTO Categoria (id_articulo, descripcion, tipo, referencia)
 VALUES 
-    ('2', 'Módulo programable compacto', 'Módulos', 'MOD-001'),
-    ('3', 'Controlador SCADA avanzado', 'Controladores', 'CTRL-001'),
-    ('4', 'Fuente estabilizada 24V', 'Fuentes de poder', 'PSU-001'),
-    ('5', 'Interfaz HMI 7 pulgadas', 'Pantallas', 'HMI-001'),
-    ('6', 'Cable de red categoría 6', 'Cables', 'CAB-001'),
-    ('7', 'Conector industrial M12', 'Conectores', 'CON-001'),
-    ('8', 'Perfiles de aluminio', 'Estructuras', 'STR-001'),
-    ('9', 'Monitor táctil industrial', 'Pantallas', 'PANT-001'),
-    ('10', 'Software de supervisión', 'Software', 'SOFT-001'),
-    ('11', 'Relé electromecánico', 'Controladores', 'RELE-001');
+    (5, 'Módulo programable compacto', 'Módulos', 'MOD-001'),
+    (6, 'Controlador SCADA avanzado', 'Controladores', 'CTRL-001'),
+    (7, 'Fuente estabilizada 24V', 'Fuentes de poder', 'PSU-001'),
+    (8, 'Interfaz HMI 7 pulgadas', 'Pantallas', 'HMI-001'),
+    (9, 'Cable de red categoría 6', 'Cables', 'CAB-001'),
+    (10, 'Conector industrial M12', 'Conectores', 'CON-001'),
+    (11, 'Perfiles de aluminio', 'Estructuras', 'STR-001'),
+    (12, 'Monitor táctil industrial', 'Pantallas', 'PANT-001'),
+    (13, 'Software de supervisión', 'Software', 'SOFT-001'),
+    (14, 'Relé electromecánico', 'Controladores', 'RELE-001');
 
+--revisar que coincida el id_persona
 -- Insertar Ventas
-INSERT INTO Venta (fecha, rut_cliente, descuento, monto_final, id_persona, estado)
+INSERT INTO Venta (fecha, rut_cliente, descuento, valor, id_persona, estado)
 VALUES 
     ('2024-03-01', '10.123.456-1', 0.5, 1710000.00, 1, 'Completada'),
     ('2024-03-05', '12.345.678-2', 0.00, 1335025.00, 3, 'Completada'),
@@ -244,55 +244,56 @@ VALUES
     ('2024-03-20', '18.901.234-7', 0.00, 7905000.00, 5, 'Completada'),
     ('2024-03-25', '10.123.456-1', 0.08, 1840000.00, 3, 'Completada');
 
+--revisar que coincida id_articulo con el precio
 -- Insertar Detalles de Venta con precios correctos
 INSERT INTO Detalle_Venta (venta_id, id_articulo, cantidad, precio_unitario, subtotal)
 VALUES 
     -- Venta 1: Cliente Industrial con descuento 5%
-    (1, 1, 3, 450000, 1350000),
-    (1, 5, 5, 1250, 6250),
-    (1, 6, 10, 2500, 25000),
+    (1, 5, 3, 450000, 1350000),
+    (1, 9, 5, 1250, 6250),
+    (1, 10, 10, 2500, 25000),
     
     -- Venta 2: ElectrónicosXL sin descuento
-    (2, 3, 2, 35000, 70000),
-    (2, 10, 8, 45.75, 366.00),
-    (2, 4, 12, 89025, 1068300),
-    (2, 5, 50, 1250, 62500),
-    (2, 7, 3, 15000, 45000),
+    (2, 7, 2, 35000, 70000),
+    (2, 14, 8, 45.75, 366.00),
+    (2, 8, 12, 89025, 1068300),
+    (2, 9, 50, 1250, 62500),
+    (2, 11, 3, 15000, 45000),
     
     -- Venta 3: Distribuidora Técnica con descuento 10%
-    (3, 2, 1, 1250000, 1250000),
-    (3, 4, 2, 89025, 178050),
-    (3, 8, 1, 2500.00, 2500.00),
-    (3, 9, 1, 5000.00, 5000.00),
+    (3, 6, 1, 1250000, 1250000),
+    (3, 8, 2, 89025, 178050),
+    (3, 10, 1, 2500.00, 2500.00),
+    (3, 13, 1, 5000.00, 5000.00),
     
     -- Venta 4: Soluciones Automáticas con descuento 3.5%
-    (4, 7, 5, 15000, 75000),
-    (4, 8, 2, 2500.00, 5000.00),
-    (4, 3, 3, 35000, 105000),
-    (4, 1, 12, 450000, 5400000),
-    (4, 6, 20, 2500, 50000),
+    (4, 11, 5, 15000, 75000),
+    (4, 10, 2, 2500.00, 5000.00),
+    (4, 7, 3, 35000, 105000),
+    (4, 5, 12, 450000, 5400000),
+    (4, 10, 20, 2500, 50000),
     
     -- Venta 5: TechMasters sin descuento
-    (5, 9, 1, 5000.00, 5000.00),
-    (5, 1, 2, 450000, 900000),
-    (5, 2, 5, 1250000, 6250000),
+    (5, 13, 1, 5000.00, 5000.00),
+    (5, 5, 2, 450000, 900000),
+    (5, 6, 5, 1250000, 6250000),
     
     -- Venta 6: Cliente Industrial con descuento 8%
-    (6, 5, 100, 1250, 125000),
-    (6, 6, 30, 2500, 75000),
-    (6, 3, 15, 35000, 525000),
-    (6, 4, 8, 89025, 712200),
-    (6, 10, 15, 45.75, 686.25);
+    (6, 9, 100, 1250, 125000),
+    (6, 10, 30, 2500, 75000),
+    (6, 7, 15, 35000, 525000),
+    (6, 8, 8, 89025, 712200),
+    (6, 14, 15, 45.75, 686.25);
 
 -- Insertar Facturas con totales correctos
-INSERT INTO Factura (venta_id, total, estado)
+INSERT INTO Factura (venta_id, total)
 VALUES 
-    (1, 1710000.00, 'Activa'),
-    (2, 1335025.00, 'Activa'),
-    (3, 2610000.00, 'Activa'),
-    (4, 6887275.00, 'Activa'),
-    (5, 7905000.00, 'Activa'),
-    (6, 1840000.00, 'Activa');
+    (1, 1710000.00),
+    (2, 1335025.00),
+    (3, 2610000.00),
+    (4, 6887275.00),
+    (5, 7905000.00),
+    (6, 1840000.00);
 
 -- Mensaje de confirmación
 PRINT '========================================';
